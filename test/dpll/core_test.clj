@@ -1,0 +1,7 @@
+(ns dpll.core-test
+  (:require [clojure.test :refer :all]
+            [dpll.core :refer :all]))
+
+(deftest a-test
+  (testing "FIXME, I fail."
+    (is (= 0 1))))
