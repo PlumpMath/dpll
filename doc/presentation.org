@@ -1,0 +1,63 @@
+#+Title: DPLL algorithm
+#+Author: Christian Weilbach
+#+Email: christian@topiq.es
+
+#+OPTIONS: reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
+#+OPTIONS: reveal_mathjax:t reveal_rolling_Links:t reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS: reveal_slide_number:t
+# +OPTIONS: reveal_width:1420 reveal_height:1080
+#+OPTIONS: toc:nil
+#+REVEAL_MARGIN: 0.1
+#+REVEAL_MIN_SCALE: 0.6
+#+REVEAL_MAX_SCALE: 1.2
+#+REVEAL_TRANS: linear
+#+REVEAL_THEME: white
+#+REVEAL_HLEVEL: 1
+#+REVEAL_HEAD_PREAMBLE: <meta name="description" content="geschichte, git-like CRDT">
+# +REVEAL_PREAMBLE: Applied to lambda
+# +REVEAL_POSTAMBLE: <p> Geoglyphs FP-prototype by C. Weilbach </p>
+
+
+* Overview
+  - Motivation
+  - DPLL
+  - Comparison to WalkSAT
+  - Outlook
+
+
+
+* Motivation
+  - efficiently solve *SAT* problems
+  - *SAT* in general $\textit{NP}$-hard
+
+
+* DPLL
+  - basis is naive /brute-force/ assignment
+  - implemented with *backtracking* (through stack)
+  - two optimizations
+    + assign *pure symbols* first
+      i.e. always $A$ or always $\neg A$
+    + assign *unit clauses* first
+      i.e. /single free variables/ in clause
+
+
+* Implementation
+  - in functional LISP dialect: Clojure
+  - /historical language/ for AI (1958 onwards)
+  - Norvig also a Lisper
+  - Clojure is good for parallelism
+  - runs on the JVM and is very pragmatic towards Java interop
+
+
+* Demo
+
+* Comparison to WalkSAT
+  - DPLL *deterministic* vs. WalkSAT *randomized*
+  - measure probability of satisfyability
+  - probability drops sharply at $m=\frac{4}{3}$
+  - *satisfyability threshold conjecture*
+
+
+* References
+  - Russell & Norvig: Artificial Intelligence - A modern approach 3rd
+    edition p. 264

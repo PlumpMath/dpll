@@ -5,29 +5,36 @@
             [clojure.test.check.properties :as prop]))
 
 ;; TODO
-;; - property based testing
 ;; - visualize fig 7.19
 ;; - stack overflow is a problem?
 
+(defn set-jvm-seed [s]
+  (let [f (.getDeclaredField java.lang.Math "randomNumberGenerator")]
+    (.setAccessible f true)
+    (.set f nil (java.util.Random. s))))
+
 (defn fac
-  ([n] (fac n 1))
+  ([n] (fac n 1N))
   ([n res]
-   (if (= n 1) res
+   (if (or (= n 1) (= n 0)) res
        (recur (dec n) (* res n)))))
 
-(defn seeded-rand-int [n seed]
-  (let [r (java.util.Random. seed)]
-    (.nextInt r n)))
+(defn rand-selection [n s]
+  (loop [sel #{}]
+    (if (= (count sel) n)
+      (seq sel)
+      (recur (conj sel (rand-nth s))))))
 
-(defn generate [num-clauses num-vars-clause num-vars seed]
-  (let [vars (take num-vars [:A :B :C :D :E :F :G :H :I :J :K :L :M :N :O :P :Q :R :S :T :U :V :W :X :Y :Z])
-        ps (take num-vars-clause (combo/nth-permutation vars (seeded-rand-int (if (<= num-vars 20)
-                                                                                (dec (fac num-vars))
-                                                                                Integer/MAX_VALUE)
-                                                                              seed)))]
-    (mapv (fn [_] (mapv #(rand-nth [% [:not %]]) ps))
+(defn generate [num-clauses num-vars-clause num-vars]
+  (let [vars (take (max num-vars num-vars-clause)
+                   [:A :B :C :D :E :F :G :H :I :J :K :L :M :N :O :P :Q :R :S :T :U :V :W :X :Y :Z
+                    :a :b :c :d :e :f :g :h :i :j :k :l :m :n :o :p :q :r :s :t :u :v :w :x :y :z])]
+    (mapv (fn [_] (mapv #(rand-nth [% [:not %]]) (rand-selection num-vars-clause vars)))
           (range num-clauses))))
 
+(comment
+  (do (set-jvm-seed 42)
+      (generate 50 3 1 42)))
 
 (defn write-cnf [cnf] ;; hack, better use clojure.walk
   (apply str (flatten
@@ -51,7 +58,7 @@
 
 (read-cnf "(A|B)&(B'|C|D')&(D|E')")
 
-(let [cnf (generate 4 3 3 42)]
+(let [cnf (generate 4 3 3)]
   (= cnf (read-cnf (write-cnf cnf))))
 
 
@@ -97,7 +104,10 @@
                    [:B [:not :C] :A]]
                   {:A true, :B true})
 
+(def counter (atom 0))
+
 (defn dpll [clauses symbols model]
+  (swap! counter inc)
   (let [res (eval-clauses clauses model)]
     (cond (all? res) model
           (some false? res) false
@@ -116,26 +126,32 @@
   (dpll clauses (set (filter #(not= % :not) (flatten clauses))) {}))
 
 
+(comment
 
-(let [clauses [[[:not :B] [:not :C] [:not :A]] [:B [:not :C] :A] [:B [:not :C] :A]]
-      symbols (set (filter #(not= % :not) (flatten clauses)))]
-  (dpll clauses symbols {}))
-
-(for [i (range 20)]
-  (let [clauses (generate 100 5 5)
+  (let [clauses [[[:not :B] [:not :C] [:not :A]] [:B [:not :C] :A] [:B [:not :C] :A]]
         symbols (set (filter #(not= % :not) (flatten clauses)))]
-    (dpll clauses symbols {})))
+    (dpll clauses symbols {}))
 
-(def sort-idempotent-prop
-  (prop/for-all [v (gen/vector gen/int)]
-    (= (sort v) (sort (sort v)))))
+  @counter
 
-(def model-really-true
-  (prop/for-all [i gen/int]
-                (Let [clauses (generate 100 5 10 i)
-                      model? (dpll-satisfiable? clauses)]
-                  (if-not model? true
-                          (= (eval-clauses clauses model?))))))
+  (for [i (range 1 101)]
+    (let [_ (set-jvm-seed 42)
+          clauses (generate 50 3 i)]
+      (reset! counter 0)
+      [i (not (not (dpll-satisfiable? clauses))) @counter]))
+
+  (def sort-idempotent-prop
+    (prop/for-all [v (gen/vector gen/int)]
+                  (= (sort v) (sort (sort v)))))
+
+  (def model-really-true
+    (prop/for-all [i gen/int]
+                  (set-jvm-seed i)
+                  (let [clauses (generate 100 5 10)
+                        model? (dpll-satisfiable? clauses)]
+                    (if-not model? true
+                            (= (eval-clauses clauses model?))))))
 
 
-(tc/quick-check 100 model-really-true)
+  (tc/quick-check 100 model-really-true)
+  )
