@@ -13,12 +13,6 @@
     (.setAccessible f true)
     (.set f nil (java.util.Random. s))))
 
-(defn fac
-  ([n] (fac n 1N))
-  ([n res]
-   (if (or (= n 1) (= n 0)) res
-       (recur (dec n) (* res n)))))
-
 (defn rand-selection [n s]
   (loop [sel #{}]
     (if (= (count sel) n)
@@ -34,7 +28,7 @@
 
 (comment
   (do (set-jvm-seed 42)
-      (generate 50 3 1 42)))
+      (generate 5 3 1)))
 
 (defn write-cnf [cnf] ;; hack, better use clojure.walk
   (apply str (flatten
@@ -127,10 +121,42 @@
 
 
 (comment
+  (def sat-iter
+    (let [runs 10
+          num-clauses 50]
+      (for [i (range 6 50)]
+        (generate num-clauses 3 i))))
 
   (let [clauses [[[:not :B] [:not :C] [:not :A]] [:B [:not :C] :A] [:B [:not :C] :A]]
         symbols (set (filter #(not= % :not) (flatten clauses)))]
     (dpll clauses symbols {}))
+
+  (map #(int (* 50 %)) (range 1 10))
+
+
+  (map #(* 50 %) (range 0.5 8 0.5))
+
+  (time
+   (doall (let [runs 10
+                symbols 25]
+            (for [num-clauses (range 0.5 8 0.5)
+                  :let [_ (set-jvm-seed 42)
+                        clauses (generate (int (* num-clauses symbols)) 3 symbols)]]
+              (dpll-satisfiable? clauses)))))
+
+  (def sat-prob
+    (let [runs 10
+          symbols 25]
+      (for [num-clauses (range 0.5 6 0.5)]
+        [num-clauses
+         (/ (count (for [seed (range runs)
+                         :let [_ (set-jvm-seed seed)
+                               clauses (generate (int (* num-clauses symbols)) 3 symbols)]
+                         :when (dpll-satisfiable? clauses)]
+                     seed))
+            runs)])))
+
+  sat-prob
 
   @counter
 
@@ -153,5 +179,4 @@
                             (= (eval-clauses clauses model?))))))
 
 
-  (tc/quick-check 100 model-really-true)
-  )
+  (tc/quick-check 100 model-really-true))

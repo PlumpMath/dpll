@@ -58,6 +58,10 @@
   - *satisfyability threshold conjecture*
 
 
+* Stability threshold conjecture at 4.3
+  file:figure19.png \\
+  (Figure 7.19 from Artificial Intelligence, Russel & Norvig)
+
 * References
   - Russell & Norvig: Artificial Intelligence - A modern approach 3rd
     edition p. 264
